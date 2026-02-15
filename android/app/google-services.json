@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "164109417945",
+    "project_id": "newfreedom-637b5",
+    "storage_bucket": "newfreedom-637b5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:164109417945:android:f387cbeadaccfa8d2cadc8",
+        "android_client_info": {
+          "package_name": "com.highwaystg.pon"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "164109417945-ls8ol6aa7c0vu76ihgq3es95tnkm2rlm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.highwaystg.pon",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "164109417945-m2r0fhv0e8dmogl278fve7f643bhb9l2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAolnM_kuPHTFDhtyPUZtK0AnmXo-qHd8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "164109417945-m2r0fhv0e8dmogl278fve7f643bhb9l2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "164109417945-6fn0mu7brrt366b81bfr2rq2hcnd3bt6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.patbergschneider.NewFreedom"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
