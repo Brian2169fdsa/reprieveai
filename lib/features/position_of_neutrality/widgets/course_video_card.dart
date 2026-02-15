@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'web_youtube_player_stub.dart'
-    if (dart.library.html) 'web_youtube_player_web.dart';
+import 'dart:ui_web' as ui_web;
+import 'dart:html' as html;
 
 class CourseVideoCard extends StatefulWidget {
   const CourseVideoCard({
@@ -22,6 +23,7 @@ class CourseVideoCard extends StatefulWidget {
 
 class _CourseVideoCardState extends State<CourseVideoCard> {
   bool _isPlaying = false;
+  final Set<String> _registeredViewTypes = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,7 @@ class _CourseVideoCardState extends State<CourseVideoCard> {
           AspectRatio(
             aspectRatio: 16 / 9,
             child: _isPlaying
-                ? WebYoutubePlayer(videoId: widget.videoId)
+                ? _buildYoutubePlayer()
                 : InkWell(
                     onTap: () {
                       setState(() {
@@ -153,5 +155,39 @@ class _CourseVideoCardState extends State<CourseVideoCard> {
         ],
       ),
     );
+  }
+
+  Widget _buildYoutubePlayer() {
+    if (!kIsWeb) {
+      // Non-web platforms: show a message
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Text(
+            'Video playback only available on web',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    // Web platform: use iframe
+    final viewType = 'youtube-embed-${widget.videoId}';
+
+    if (!_registeredViewTypes.contains(viewType)) {
+      // ignore: undefined_prefixed_name
+      ui_web.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
+        final iframe = html.IFrameElement()
+          ..src = 'https://www.youtube.com/embed/${widget.videoId}?autoplay=1&rel=0'
+          ..style.border = '0'
+          ..allow =
+              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+          ..allowFullscreen = true;
+        return iframe;
+      });
+      _registeredViewTypes.add(viewType);
+    }
+
+    return HtmlElementView(viewType: viewType);
   }
 }
