@@ -129,6 +129,12 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           path: '/programs/peer',
           builder: (context, params) => const PeerHomePage(),
         ),
+        FFRoute(
+          name: 'Community',
+          path: '/community',
+          builder: (context, params) => const CommunityPage(),
+          requireAuth: true,
+        ),
         // '/home' route removed; HomeWidget is now served at '/'.
         FFRoute(
           name: 'HomeCopy',
