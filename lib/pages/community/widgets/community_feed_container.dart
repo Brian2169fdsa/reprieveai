@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/pages/community/models/community_post.dart';
+import '/pages/community/widgets/post_card.dart';
 
 class CommunityFeedContainer extends StatefulWidget {
   const CommunityFeedContainer({super.key});
@@ -180,7 +181,18 @@ class CommunityFeedContainerState extends State<CommunityFeedContainer> {
         }
 
         final post = _posts[index];
-        return _buildPostCard(context, post: post);
+        return FutureBuilder<Map<String, dynamic>>(
+          future: _getUserData(post.userId),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const SizedBox.shrink();
+            }
+            return PostCard(
+              post: post,
+              userData: snapshot.data!,
+            );
+          },
+        );
       },
     );
   }
@@ -214,170 +226,4 @@ class CommunityFeedContainerState extends State<CommunityFeedContainer> {
     );
   }
 
-  Widget _buildPostCard(
-    BuildContext context, {
-    required CommunityPost post,
-  }) {
-    // Format timestamp
-    final now = DateTime.now();
-    final difference = now.difference(post.createdAt);
-    String timestamp;
-    if (difference.inMinutes < 1) {
-      timestamp = 'Just now';
-    } else if (difference.inMinutes < 60) {
-      timestamp = '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      timestamp = '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      timestamp = '${difference.inDays}d ago';
-    } else {
-      timestamp = '${post.createdAt.month}/${post.createdAt.day}/${post.createdAt.year}';
-    }
-
-    return Card(
-      color: Colors.white,
-      elevation: 6,
-      shadowColor: Colors.black.withOpacity(0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Post Type Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: FlutterFlowTheme.of(context).primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                CommunityPost.postTypeDisplayName(post.type),
-                style: TextStyle(
-                  color: FlutterFlowTheme.of(context).primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Header: Avatar + Name + Timestamp (with lazy-loaded user data)
-            FutureBuilder<Map<String, dynamic>>(
-              future: _getUserData(post.userId),
-              builder: (context, snapshot) {
-                final displayName = snapshot.data?['displayName'] ?? 'Community Member';
-                final photoUrl = snapshot.data?['photoUrl'];
-
-                return Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: FlutterFlowTheme.of(context).primary,
-                      backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-                      child: photoUrl == null
-                          ? Text(
-                              displayName[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            displayName,
-                            style: FlutterFlowTheme.of(context).bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade900,
-                                ),
-                          ),
-                          Text(
-                            timestamp,
-                            style: FlutterFlowTheme.of(context).bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // Content
-            Text(
-              post.text,
-              style: FlutterFlowTheme.of(context).bodyMedium?.copyWith(
-                    color: Colors.grey.shade800,
-                  ),
-            ),
-            const SizedBox(height: 12),
-
-            // Reaction bar (placeholder)
-            Row(
-              children: [
-                _buildReactionButton(
-                  context,
-                  icon: Icons.favorite_border,
-                  label: '${post.reactionCount}',
-                ),
-                const SizedBox(width: 16),
-                _buildReactionButton(
-                  context,
-                  icon: Icons.comment_outlined,
-                  label: '${post.commentCount}',
-                ),
-                const SizedBox(width: 16),
-                _buildReactionButton(
-                  context,
-                  icon: Icons.share_outlined,
-                  label: 'Share',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReactionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-  }) {
-    return InkWell(
-      onTap: () {
-        // Placeholder - reactions coming soon
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: Colors.grey.shade600),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
