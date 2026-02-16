@@ -135,6 +135,12 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => const CommunityPage(),
           requireAuth: true,
         ),
+        FFRoute(
+          name: 'AdminModeration',
+          path: '/admin/moderation',
+          builder: (context, params) => const ModerationPage(),
+          requireAuth: true,
+        ),
         // '/home' route removed; HomeWidget is now served at '/'.
         FFRoute(
           name: 'HomeCopy',

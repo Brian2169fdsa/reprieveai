@@ -16,3 +16,4 @@ export '/features/programs/peer_home.dart' show PeerHomePage;
 export '/features/goals/pages/goals_home_page.dart' show GoalsHomePage;
 export '/features/goals/pages/goals_tab_view.dart' show GoalsTabView;
 export '/pages/community/community_page.dart' show CommunityPage;
+export '/pages/admin/moderation_page.dart' show ModerationPage;

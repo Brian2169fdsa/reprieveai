@@ -103,6 +103,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "community_comments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "moderationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ]
 }
