@@ -1,5 +1,4 @@
 import '/components/nav_profile_button/nav_profile_button_widget.dart';
-import '/components/ai_assistant_button/ai_assistant_button.dart';
 import '/components/community_avatar/community_avatar_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -59,8 +58,6 @@ class _HomeHeaderViewWidgetState extends State<HomeHeaderViewWidget> {
                 ),
           ),
           const Spacer(),
-          const AiAssistantButton(),
-          const SizedBox(width: 12),
           const CommunityAvatarButton(),
           const SizedBox(width: 12),
           wrapWithModel(
