@@ -23,7 +23,7 @@ class CourseVideoCard extends StatefulWidget {
 
 class _CourseVideoCardState extends State<CourseVideoCard> {
   bool _isPlaying = false;
-  final Set<String> _registeredViewTypes = <String>{};
+  static final Set<String> _registeredViewTypes = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -178,16 +178,21 @@ class _CourseVideoCardState extends State<CourseVideoCard> {
       // ignore: undefined_prefixed_name
       ui_web.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
         final iframe = html.IFrameElement()
-          ..src = 'https://www.youtube.com/embed/${widget.videoId}?autoplay=1&rel=0'
-          ..style.border = '0'
-          ..allow =
-              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+          ..src = 'https://www.youtube.com/embed/${widget.videoId}?autoplay=1&rel=0&modestbranding=1'
+          ..style.border = 'none'
+          ..style.width = '100%'
+          ..style.height = '100%'
+          ..style.display = 'block'
+          ..allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
           ..allowFullscreen = true;
         return iframe;
       });
       _registeredViewTypes.add(viewType);
     }
 
-    return HtmlElementView(viewType: viewType);
+    return Container(
+      color: Colors.black,
+      child: HtmlElementView(viewType: viewType),
+    );
   }
 }
