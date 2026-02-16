@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/pages/community/widgets/community_feed_container.dart';
+import '/pages/community/widgets/create_post_modal.dart';
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
@@ -10,40 +11,18 @@ class CommunityPage extends StatefulWidget {
 }
 
 class _CommunityPageState extends State<CommunityPage> {
+  final GlobalKey<CommunityFeedContainerState> _feedKey = GlobalKey();
+
   void _showCreatePostModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Create Post',
-                style: FlutterFlowTheme.of(context).headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              const Text('Post creation coming soon...'),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ),
-            ],
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      builder: (context) => CreatePostModal(
+        onPostCreated: () {
+          // Refresh the feed
+          _feedKey.currentState?.refreshFeed();
+        },
       ),
     );
   }
@@ -83,7 +62,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 // Feed (70%)
                 Expanded(
                   flex: 7,
-                  child: const CommunityFeedContainer(),
+                  child: CommunityFeedContainer(key: _feedKey),
                 ),
                 // Sidebar (30%)
                 Expanded(
@@ -116,7 +95,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 ),
               ],
             )
-          : const CommunityFeedContainer(),
+          : CommunityFeedContainer(key: _feedKey),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreatePostModal,
         backgroundColor: FlutterFlowTheme.of(context).primary,

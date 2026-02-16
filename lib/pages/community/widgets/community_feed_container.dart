@@ -1,56 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/pages/community/models/community_post.dart';
 
-class CommunityFeedContainer extends StatelessWidget {
+class CommunityFeedContainer extends StatefulWidget {
   const CommunityFeedContainer({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock data - 5 placeholder posts
-    final mockPosts = [
-      {
-        'name': 'Alex Johnson',
-        'timestamp': '2 hours ago',
-        'content': 'Just completed my first week in the program. Feeling hopeful and supported by this amazing community!',
-      },
-      {
-        'name': 'Sam Martinez',
-        'timestamp': '5 hours ago',
-        'content': 'The mindfulness exercises from today\'s session really helped me stay grounded. Thank you all for being here.',
-      },
-      {
-        'name': 'Jordan Lee',
-        'timestamp': '1 day ago',
-        'content': 'Does anyone have tips for managing stress during the job search process? Would love to hear what worked for you.',
-      },
-      {
-        'name': 'Taylor Brown',
-        'timestamp': '2 days ago',
-        'content': 'Celebrating 30 days of progress today! One day at a time. This community keeps me motivated.',
-      },
-      {
-        'name': 'Casey Davis',
-        'timestamp': '3 days ago',
-        'content': 'The peer support group meeting yesterday was exactly what I needed. Grateful for everyone who shared their stories.',
-      },
-    ];
+  State<CommunityFeedContainer> createState() => CommunityFeedContainerState();
+}
 
-    // Check if we have posts (in this case we always do for mock)
-    if (mockPosts.isEmpty) {
+class CommunityFeedContainerState extends State<CommunityFeedContainer> {
+  List<CommunityPost> _posts = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPosts();
+  }
+
+  Future<void> _loadPosts() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('community_posts')
+          .where('moderationStatus', isEqualTo: 'approved')
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .get();
+
+      setState(() {
+        _posts = snapshot.docs
+            .map((doc) => CommunityPost.fromFirestore(doc))
+            .toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void refreshFeed() {
+    _loadPosts();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_posts.isEmpty) {
       return _buildEmptyState(context);
     }
 
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: mockPosts.length,
+      itemCount: _posts.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final post = mockPosts[index];
+        final post = _posts[index];
         return _buildPostCard(
           context,
-          name: post['name']!,
-          timestamp: post['timestamp']!,
-          content: post['content']!,
+          post: post,
         );
       },
     );
@@ -87,10 +101,22 @@ class CommunityFeedContainer extends StatelessWidget {
 
   Widget _buildPostCard(
     BuildContext context, {
-    required String name,
-    required String timestamp,
-    required String content,
+    required CommunityPost post,
   }) {
+    // Format timestamp
+    final now = DateTime.now();
+    final difference = now.difference(post.createdAt);
+    String timestamp;
+    if (difference.inMinutes < 60) {
+      timestamp = '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      timestamp = '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      timestamp = '${difference.inDays}d ago';
+    } else {
+      timestamp = '${post.createdAt.month}/${post.createdAt.day}/${post.createdAt.year}';
+    }
+
     return Card(
       color: Colors.white,
       elevation: 6,
@@ -103,18 +129,34 @@ class CommunityFeedContainer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Post Type Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: FlutterFlowTheme.of(context).primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                CommunityPost.postTypeDisplayName(post.type),
+                style: TextStyle(
+                  color: FlutterFlowTheme.of(context).primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
             // Header: Avatar + Name + Timestamp
             Row(
               children: [
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: FlutterFlowTheme.of(context).primary,
-                  child: Text(
-                    name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -123,7 +165,7 @@ class CommunityFeedContainer extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        'Community Member',
                         style: FlutterFlowTheme.of(context).bodyLarge?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: Colors.grey.shade900,
@@ -144,26 +186,26 @@ class CommunityFeedContainer extends StatelessWidget {
 
             // Content
             Text(
-              content,
+              post.text,
               style: FlutterFlowTheme.of(context).bodyMedium?.copyWith(
                     color: Colors.grey.shade800,
                   ),
             ),
             const SizedBox(height: 12),
 
-            // Reaction bar placeholder
+            // Reaction bar
             Row(
               children: [
                 _buildReactionButton(
                   context,
                   icon: Icons.favorite_border,
-                  label: '0',
+                  label: '${post.reactionCount}',
                 ),
                 const SizedBox(width: 16),
                 _buildReactionButton(
                   context,
                   icon: Icons.comment_outlined,
-                  label: '0',
+                  label: '${post.commentCount}',
                 ),
                 const SizedBox(width: 16),
                 _buildReactionButton(
