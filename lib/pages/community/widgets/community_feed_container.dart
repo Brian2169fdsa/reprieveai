@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/pages/community/models/community_post.dart';
 import '/pages/community/widgets/post_card.dart';
+import '/pages/community/models/sponsor_match.dart';
 
 class CommunityFeedContainer extends StatefulWidget {
   const CommunityFeedContainer({super.key});
@@ -21,13 +23,112 @@ class CommunityFeedContainerState extends State<CommunityFeedContainer> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
 
+  // Sponsor visibility data
+  String? _currentUserId;
+  bool _isAdmin = false;
+  Set<String> _sponsorMatchIds = {}; // IDs of users in sponsor relationships with current user
+
   static const int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
-    _loadPosts();
+    _initializeUser();
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _initializeUser() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    _currentUserId = userId;
+
+    // Check admin status
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      _isAdmin = userDoc.data()?['isAdmin'] ?? false;
+    } catch (e) {
+      _isAdmin = false;
+    }
+
+    // Load sponsor matches
+    await _loadSponsorMatches();
+
+    // Load posts after user data is ready
+    _loadPosts();
+  }
+
+  Future<void> _loadSponsorMatches() async {
+    if (_currentUserId == null) return;
+
+    try {
+      // Get matches where user is participant
+      final participantMatches = await FirebaseFirestore.instance
+          .collection('sponsor_matches')
+          .where('participantId', isEqualTo: _currentUserId)
+          .get();
+
+      // Get matches where user is sponsor
+      final sponsorMatches = await FirebaseFirestore.instance
+          .collection('sponsor_matches')
+          .where('sponsorId', isEqualTo: _currentUserId)
+          .get();
+
+      final matchIds = <String>{};
+
+      // Add all sponsor IDs (if user is participant)
+      for (var doc in participantMatches.docs) {
+        final match = SponsorMatch.fromFirestore(doc);
+        matchIds.add(match.sponsorId);
+      }
+
+      // Add all participant IDs (if user is sponsor)
+      for (var doc in sponsorMatches.docs) {
+        final match = SponsorMatch.fromFirestore(doc);
+        matchIds.add(match.participantId);
+      }
+
+      setState(() {
+        _sponsorMatchIds = matchIds;
+      });
+    } catch (e) {
+      // If sponsor_matches collection doesn't exist yet, continue with empty set
+      _sponsorMatchIds = {};
+    }
+  }
+
+  bool _canViewPost(CommunityPost post) {
+    // User not logged in - only see public posts
+    if (_currentUserId == null) {
+      return post.visibility == PostVisibility.public;
+    }
+
+    // Post owner can always see their own posts
+    if (post.userId == _currentUserId) {
+      return true;
+    }
+
+    // Admin can see all posts
+    if (_isAdmin) {
+      return true;
+    }
+
+    // Check visibility rules
+    switch (post.visibility) {
+      case PostVisibility.public:
+        return true;
+      case PostVisibility.sponsorOnly:
+        // Must be in a sponsor relationship with post owner
+        return _sponsorMatchIds.contains(post.userId);
+      case PostVisibility.private:
+        return false; // Only owner can see (already checked above)
+    }
   }
 
   @override
@@ -61,12 +162,15 @@ class CommunityFeedContainerState extends State<CommunityFeedContainer> {
 
       if (snapshot.docs.isNotEmpty) {
         _lastDocument = snapshot.docs.last;
-        final posts = snapshot.docs
+        final allPosts = snapshot.docs
             .map((doc) => CommunityPost.fromFirestore(doc))
             .toList();
 
+        // Filter posts based on visibility rules
+        final visiblePosts = allPosts.where(_canViewPost).toList();
+
         setState(() {
-          _posts = posts;
+          _posts = visiblePosts;
           _hasMore = snapshot.docs.length == _pageSize;
           _isLoading = false;
         });
@@ -97,12 +201,15 @@ class CommunityFeedContainerState extends State<CommunityFeedContainer> {
 
       if (snapshot.docs.isNotEmpty) {
         _lastDocument = snapshot.docs.last;
-        final newPosts = snapshot.docs
+        final allNewPosts = snapshot.docs
             .map((doc) => CommunityPost.fromFirestore(doc))
             .toList();
 
+        // Filter posts based on visibility rules
+        final visibleNewPosts = allNewPosts.where(_canViewPost).toList();
+
         setState(() {
-          _posts.addAll(newPosts);
+          _posts.addAll(visibleNewPosts);
           _hasMore = snapshot.docs.length == _pageSize;
           _isLoadingMore = false;
         });
