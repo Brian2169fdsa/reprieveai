@@ -54,6 +54,58 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Community posts - users can create, read approved, admins moderate
+    match /community_posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null &&
+                      request.resource.data.moderationStatus == 'pending' &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow delete: if false;
+    }
+
+    // Community comments - users can create, read approved, admins moderate
+    match /community_comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null &&
+                      request.resource.data.moderationStatus == 'pending' &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow delete: if false;
+    }
+
+    // Community reactions - users can manage their own reactions
+    match /community_reactions/{reactionId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                      resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null &&
+                      resource.data.userId == request.auth.uid;
+    }
+
+    // Sponsor matches - users can read their own matches, admins can write
+    match /sponsor_matches/{matchId} {
+      allow read: if request.auth != null &&
+                    (resource.data.participantId == request.auth.uid ||
+                     resource.data.sponsorId == request.auth.uid ||
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
+      allow write: if request.auth != null &&
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Goals collection (top-level) - users can manage their own goals
+    match /goals/{goalId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null &&
+                              resource.data.userId == request.auth.uid;
+    }
+
     // Everything else - deny by default
     match /{document=**} {
       allow read, write: if false;
