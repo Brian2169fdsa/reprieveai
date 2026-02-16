@@ -92,7 +92,9 @@ class CommunityFeedContainer extends StatelessWidget {
     required String content,
   }) {
     return Card(
-      elevation: 2,
+      color: Colors.white,
+      elevation: 6,
+      shadowColor: Colors.black.withOpacity(0.15),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -124,6 +126,7 @@ class CommunityFeedContainer extends StatelessWidget {
                         name,
                         style: FlutterFlowTheme.of(context).bodyLarge?.copyWith(
                               fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade900,
                             ),
                       ),
                       Text(
@@ -142,7 +145,9 @@ class CommunityFeedContainer extends StatelessWidget {
             // Content
             Text(
               content,
-              style: FlutterFlowTheme.of(context).bodyMedium,
+              style: FlutterFlowTheme.of(context).bodyMedium?.copyWith(
+                    color: Colors.grey.shade800,
+                  ),
             ),
             const SizedBox(height: 12),
 
